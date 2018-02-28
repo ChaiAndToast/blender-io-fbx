@@ -65,10 +65,8 @@ ensured to be unique.
 """
 
 
-import encode_bin
-
-
 def elem_empty(elem, name):
+    import encode_bin
     sub_elem = encode_bin.FBXElem(name)
     if elem is not None:
         elem.elems.append(sub_elem)
@@ -99,8 +97,7 @@ def parse_json_rec(fbx_root, json_node):
             d = eval('b"""' + d + '"""')
             e.add_bytes(d)
         elif dt == "S":
-            d = d.encode()
-            d.replace(b"::", b"\x00\x01")
+            d = d.encode().replace(b"::", b"\x00\x01")
             e.add_string(d)
         elif dt == "i":
             e.add_int32_array(d)
@@ -140,7 +137,10 @@ def parse_json(json_root):
 
 
 def json2fbx(fn):
-    import os, json
+    import os
+    import json
+
+    import encode_bin
 
     fn_fbx = "%s.fbx" % os.path.splitext(fn)[0]
     print("Writing: %r " % fn_fbx, end="")

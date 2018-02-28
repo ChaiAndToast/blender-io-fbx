@@ -625,7 +625,7 @@ def save_single(operator, scene, filepath="",
         fw('\n\t\t\tProperty: "TranslationMaxX", "bool", "",%d' % constraints["loc_limit"][3])
         fw('\n\t\t\tProperty: "TranslationMaxY", "bool", "",%d' % constraints["loc_limit"][4])
         fw('\n\t\t\tProperty: "TranslationMaxZ", "bool", "",%d' % constraints["loc_limit"][5])
-
+        
         fw('\n\t\t\tProperty: "RotationOrder", "enum", "",0'
            '\n\t\t\tProperty: "RotationSpaceForLimitOnly", "bool", "",0'
            '\n\t\t\tProperty: "AxisLen", "double", "",10'
@@ -1505,7 +1505,6 @@ def save_single(operator, scene, filepath="",
             raise Exception("invalid mesh_smooth_type: %r" % mesh_smooth_type)
 
         # Write VertexColor Layers
-        # note, no programs seem to use this info :/
         collayers = []
         if len(me.vertex_colors):
             collayers = me.vertex_colors
@@ -1572,7 +1571,7 @@ def save_single(operator, scene, filepath="",
                 if do_textures:
                     fw('\n\t\tLayerElementTexture: %d {'
                        '\n\t\t\tVersion: 101'
-                       '\n\t\t\tName: "%s"' 
+                       '\n\t\t\tName: "%s"'
                        '\n\t\t\tMappingInformationType: "%s"'
                        '\n\t\t\tReferenceInformationType: "IndexToDirect"'
                        '\n\t\t\tBlendMode: "Translucent"'
@@ -1908,9 +1907,11 @@ def save_single(operator, scene, filepath="",
 
                         # Warning for scaled, mesh objects with armatures
                         if abs(ob.scale[0] - 1.0) > 0.05 or abs(ob.scale[1] - 1.0) > 0.05 or abs(ob.scale[1] - 1.0) > 0.05:
-                            operator.report({'WARNING'}, "Object '%s' has a scale of (%.3f, %.3f, %.3f), " \
-                                                         "Armature deformation will not work as expected " \
-                                                         "(apply Scale to fix)" % ((ob.name,) + tuple(ob.scale)))
+                            operator.report(
+                                    {'WARNING'},
+                                    "Object '%s' has a scale of (%.3f, %.3f, %.3f), "
+                                    "Armature deformation will not work as expected "
+                                    "(apply Scale to fix)" % (ob.name, *ob.scale))
 
                     else:
                         blenParentBoneName = armob = None
@@ -2820,6 +2821,7 @@ Takes:  {''')
 def defaults_unity3d():
     return dict(global_matrix=Matrix.Rotation(-math.pi / 2.0, 4, 'X'),
                 use_selection=False,
+                use_visible=True,
                 object_types={'ARMATURE', 'EMPTY', 'MESH'},
                 use_mesh_modifiers=True,
                 use_armature_deform_only=True,
@@ -2834,6 +2836,7 @@ def defaults_unity3d():
 def save(operator, context,
          filepath="",
          use_selection=False,
+         use_visible=True,
          batch_mode='OFF',
          use_batch_own_dir=False,
          **kwargs
@@ -2846,6 +2849,8 @@ def save(operator, context,
         kwargs_mod = kwargs.copy()
         if use_selection:
             kwargs_mod["context_objects"] = context.selected_objects
+        elif use_visible:
+            kwargs_mod["context_objects"] = context.visible_objects
         else:
             kwargs_mod["context_objects"] = context.scene.objects
 
@@ -2861,7 +2866,7 @@ def save(operator, context,
             fbxpath += os.sep
 
         if batch_mode == 'GROUP':
-            data_seq = bpy.data.groups
+            data_seq = tuple(grp for grp in bpy.data.groups if grp.objects)
         else:
             data_seq = bpy.data.scenes
 
